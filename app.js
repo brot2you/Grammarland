@@ -29,6 +29,7 @@ function todayDate(t){if(!t)return 'Bientôt';return new Intl.DateTimeFormat('fr
 function setRoute(h){if(location.hash!==h)history.replaceState(null,'',h)}
 function nav(view,id,scroll=true){page=view;if(id)worldId=id;
  if(view==='home')setRoute('#accueil');
+ if(view==='adventures')setRoute('#aventures');
  if(view==='map')setRoute('#mondes');
  if(view==='world')setRoute('#monde/'+worldId);
  if(view==='arcade')setRoute('#jeux');
@@ -42,6 +43,8 @@ function render(){
  applySettings();document.body.classList.toggle('on-land-map',page==='home'||page==='map');renderHeader();renderMobile();
  if(page==='home')main.innerHTML=homePage();
  else if(page==='map')main.innerHTML=mapPage();
+ else if(page==='adventures')main.innerHTML=adventuresPage();
+ else if(page==='adventure')main.innerHTML=adventurePage();
  else if(page==='world')main.innerHTML=worldPage(worldId);
  else if(page==='arcade')main.innerHTML=arcadePage();
  else if(page==='notebook')main.innerHTML=notebookPage();
@@ -51,10 +54,47 @@ function render(){
  else main.innerHTML=homePage();
  if(remembered&&page==='game'){let candidates=main.querySelectorAll('[data-action=\"'+remembered.action+'\"]');let target=Array.from(candidates).find(x=>(remembered.index===undefined||x.dataset.index===remembered.index)&&(remembered.uid===undefined||x.dataset.uid===remembered.uid)&&(remembered.group===undefined||x.dataset.group===remembered.group));if(!target&&game?.solved)target=main.querySelector('[data-action=\"next\"]');if(!target)target=main.querySelector('.sort-card, .word-tile:not([disabled]), .choice:not([disabled])');if(target&&!target.disabled)target.focus({preventScroll:true})}
 }
-function renderHeader(){let t=totals();let links=[['home','🏠','Accueil'],['map','🗺️','Mondes'],['arcade','🎮','Jeux'],['notebook','📖','Carnet'],['progress','🏅','Progrès']];
+
+/* V5: three original contextual adventures. Correct answers advance the world; no time limit. */
+const adventures=[
+ {id:'time',icon:'⏳',title:'La Fabrique du Temps',world:'present',art:'present.webp',subtitle:'Change le regard sur une scène.',min:'6e',scenes:[
+ ['Au village, Eli joue au ballon tous les samedis.','Exprime une habitude.',['Eli plays every Saturday.','Eli is playing right now.','Eli played yesterday.'],0,'Le présent simple exprime une habitude.','☀️ Le calendrier du village s’illumine !'],
+ ['Une pluie magique commence. Eli joue au ballon à cet instant.','Que se passe-t-il maintenant ?',['Eli plays every week.','Eli is playing now.','Eli has played already.'],1,'BE + -ING présente une action en cours.','🌦️ La pluie devient visible autour du terrain !'],
+ ['Hier, la cloche a sonné pendant qu’Eli jouait.','Présente l’arrière-plan au passé.',['Eli was playing when the bell rang.','Eli plays when the bell rings.','Eli will play when it rings.'],0,'Le prétérit BE + -ING présente l’action en cours à un moment passé.','🔔 La cloche apparaît dans le souvenir !'],
+ ['Eli vient de terminer son défi. Le résultat compte maintenant.','Choisis la formulation-bilan.',['Eli played every day.','Eli has finished his challenge.','Eli was finishing yesterday.'],1,'HAVE + participe passé permet ici de faire un bilan présent.','🏆 Le trophée apparaît dans la scène !']]},
+ {id:'castle',icon:'🏰',title:'Le Château des Phrases',world:'sentences',art:'sentences.webp',subtitle:'Construis des passerelles avec les mots.',min:'6e',scenes:[
+ ['La porte ne s’ouvre qu’avec une phrase affirmative.','Construis : « Maya lit un livre. »',['Maya','reads','a','book','.'],['reads','a','Maya','.','book'],'Sujet + verbe + complément. La phrase devient un pont !','🌉 Une passerelle se déploie !'],
+ ['Le bibliothécaire veut connaître le lieu.','Construis : « Où habite-t-elle ? »',['Where','does','she','live','?'],['she','live','does','Where','?'],'Avec does, le verbe principal conserve sa base verbale.','📚 La bibliothèque s’ouvre !'],
+ ['Un indice relie un personnage à une action.','Construis : « La fille qui chante est mon amie. »',['The','girl','who','sings','is','my','friend','.'],['girl','who','sings','The','my','is','.','friend'],'Who introduit une relative qui caractérise une personne.','🗝️ La clé dorée apparaît !'],
+ ['Le château est sauvé grâce à une cause.','Construis : « Nous sommes restés parce qu’il pleuvait. »',['We','stayed','because','it','was','raining','.'],['because','raining','We','was','stayed','.','it'],'Because introduit une cause et relie deux propositions.','🏰 La dernière tour se rallume !']]},
+ {id:'modal',icon:'🔮',title:'Le Jardin des Possibles',world:'modal',art:'modal.webp',subtitle:'Choisis une intention, observe les conséquences.',min:'5e',scenes:[
+ ['Un ami est capable de traverser le pont.','Exprime sa capacité.',['He must cross the bridge.','He can cross the bridge.','He might cross the bridge.'],1,'Can exprime ici la capacité, pas l’obligation ou l’incertitude.','🌉 Le pont brille : le passage est possible !'],
+ ['Un panneau interdit de cueillir les fleurs.','Exprime une interdiction.',['You mustn’t pick flowers.','You don’t have to pick flowers.','You should pick flowers.'],0,'Mustn’t = interdiction ; don’t have to = absence d’obligation.','🌷 Les fleurs sont protégées !'],
+ ['Le ciel est sombre, mais la pluie reste incertaine.','Exprime une possibilité.',['It must rain.','It might rain.','It can’t rain.'],1,'Might exprime une possibilité sans certitude.','☁️ Un nuage apparaît, mais rien n’est certain !'],
+ ['Une amie a mal à la tête. Tu lui proposes un conseil.','Choisis un conseil, pas un ordre.',['You must stay home.','You should rest.','You can’t rest.'],1,'Should exprime un conseil.','💚 Ton amie peut choisir de se reposer !']]}
+];
+let adventure=null;
+function openAdventure(id){const a=adventures.find(v=>v.id===id);if(!a)return;adventure={id,index:0,selected:[],solved:false,mistakes:0,feedback:''};page='adventure';setRoute('#aventure/'+id);render();window.scrollTo(0,0)}
+function adventuresPage(){const done=save.adventures||{};return `<div class="page"><div class="panel page-banner"><div><p class="eyebrow">🌈 NOUVEAUTÉ V5 · AVENTURES 2D</p><h1 class="h-title">Des histoires qui réagissent à tes choix !</h1><p>Observe, manipule et vois le monde changer. Aucune limite de temps. Chaque scène dispose d’un indice et d’une explication.</p></div><span class="banner-emoji">🎮</span></div><div class="v5-grid">${adventures.map(a=>`<article class="v5-adventure-card"><img src="${asset(a.art)}" alt="Décor illustré du monde ${esc(a.title)}"><div class="v5-adventure-body"><span class="pill">${a.icon} Dès la ${a.min}</span><h2>${a.title}</h2><p>${a.subtitle}</p><p class="tiny-note">4 scènes interactives · ${done[a.id]?'🏅 Aventure terminée':'✨ À découvrir'}</p><button class="btn primary" data-action="v5-open" data-id="${a.id}">▶ ${done[a.id]?'Rejouer':'Commencer'}</button></div></article>`).join('')}</div><div class="guide">🧠 Ces aventures complètent les 77 missions de la V4, toujours accessibles depuis la carte et le carnet.</div></div>`}
+function adventurePage(){if(!adventure)return adventuresPage();const a=adventures.find(x=>x.id===adventure.id),i=adventure.index,sc=a.scenes[i];if(!sc)return adventuresPage();const build=a.id==='castle';const options=build?sc[3]:sc[2],result=build?sc[2]:null;const stageIcons=['🌱','✨','⭐','🏆'];let choices;
+ if(build){choices=`<div class="v5-phrase" aria-label="Phrase en construction">${adventure.selected.length?adventure.selected.map((idx,pos)=>`<button data-action="v5-remove" data-index="${pos}" class="v5-word placed">${esc(options[idx])} ×</button>`).join(''):'<span>Appuie sur les mots pour les placer ici…</span>'}</div><div class="v5-tiles">${options.map((word,j)=>`<button class="v5-word" data-action="v5-tile" data-index="${j}" ${adventure.selected.includes(j)?'disabled':''}>${esc(word)}</button>`).join('')}</div>`}
+ else choices=`<div class="v5-choices">${options.map((opt,j)=>`<button class="v5-option ${adventure.selected[0]===j?'picked':''}" data-action="v5-choose" data-index="${j}" ${adventure.solved?'disabled':''}>${esc(opt)}</button>`).join('')}</div>`;
+ return `<div class="page v5-page"><div class="v5-stage-top"><button class="btn small ghost" data-action="v5-hub">← Aventures</button><span class="pill">${a.icon} ${esc(a.title)}</span><span class="pill">Scène ${i+1} / ${a.scenes.length}</span></div><div class="v5-stage" style="--v5-bg:url('${asset(a.art)}')"><div class="v5-landscape"><div class="v5-chapter">${a.title} <span>${stageIcons[i]}</span></div><div class="v5-character">${a.id==='time'?'🧭':a.id==='castle'?'🔑':'🌟'}</div><div class="v5-event" aria-live="polite">${adventure.solved?esc(sc[sc.length-1]):'✨ Observe les indices et transforme cette scène.'}</div></div><div class="v5-workbench"><p class="eyebrow">MISSION ${i+1} · EXPÉRIENCE INTERACTIVE</p><h1>${esc(sc[0])}</h1><p class="v5-question">${esc(sc[1])}</p>${choices}${adventure.feedback?`<div class="v5-feedback ${adventure.solved?'right':'tryagain'}" role="status">${esc(adventure.feedback)}</div>`:''}<div class="v5-actions"><button class="btn ghost" data-action="v5-hint">💡 Un indice</button>${build?`<button class="btn ghost" data-action="v5-reset">↻ Recommencer la phrase</button>`:''}${adventure.solved?`<button class="btn green" data-action="v5-next">${i===a.scenes.length-1?'🏆 Terminer l’aventure':'Continuer ➜'}</button>`:`<button class="btn primary" data-action="v5-check" ${adventure.selected.length===0?'disabled':''}>✨ Tester mon idée</button>`}</div></div></div></div>`}
+function v5Action(type,idx){if(!adventure)return;const a=adventures.find(x=>x.id===adventure.id),sc=a.scenes[adventure.index],build=a.id==='castle';if(type==='hint'){adventure.feedback=build?'Observe qui fait l’action, puis le verbe et les compléments.':sc[sc.length-2];render();return}
+ if(type==='next'){if(!adventure.solved)return;if(adventure.index===a.scenes.length-1){save.adventures=save.adventures||{};if(!save.adventures[a.id]){save.adventures[a.id]=true;save.xp+=40;persist()}toast('🏆 Aventure terminée ! +40 XP à la première réussite.');adventure=null;nav('adventures');return}adventure.index++;adventure.selected=[];adventure.solved=false;adventure.feedback='';render();return}
+ if(adventure.solved)return;
+ if(type==='choose'){adventure.selected=[idx];adventure.feedback=''}
+ if(type==='tile'&&!adventure.selected.includes(idx)){adventure.selected.push(idx);adventure.feedback=''}
+ if(type==='remove'){adventure.selected.splice(idx,1);adventure.feedback=''}
+ if(type==='reset'){adventure.selected=[];adventure.feedback=''}
+ if(type==='check'){const correct=build?adventure.selected.length===sc[2].length&&adventure.selected.every((j,k)=>sc[3][j]===sc[2][k]):adventure.selected[0]===sc[3];if(correct){adventure.solved=true;adventure.feedback=sc[sc.length-2]}else{adventure.mistakes++;adventure.feedback='Pas encore ! Regarde la situation, puis essaie une autre formulation. Tu peux demander un indice.'}}
+ render();
+}
+
+function renderHeader(){let t=totals();let links=[['home','🏠','Accueil'],['map','🗺️','Mondes'],['adventures','✨','Aventures'],['arcade','🎮','Jeux'],['notebook','📖','Carnet'],['progress','🏅','Progrès']];
  header.innerHTML=`<a class="brand" href="#accueil" data-action="nav" data-view="home"><img src="${asset('pip.png')}" alt="Pip, la mascotte"/><div><div class="brand-word">GRAMMARLAND<span style="color:#ffda72">!</span></div><div class="brand-sub">Les îles des mots</div></div></a><nav aria-label="Navigation principale" class="desktop-nav">${links.map(([v,ic,label])=>`<button class="nav-link ${page===v?'active':''}" data-action="nav" data-view="${v}" ${page===v?'aria-current="page"':''}>${ic} ${label}</button>`).join('')}</nav><div class="header-right"><label><span class="sr-only" style="position:absolute;clip:rect(0,0,0,0)">Niveau</span><select class="grade-select" id="gradeSelect" aria-label="Choisir mon niveau">${DB.grades.map(g=>`<option ${save.grade===g?'selected':''}>${g}</option>`).join('')}</select></label><span class="stat-pill" title="Étoiles gagnées">⭐ <strong>${t.stars}</strong></span><button class="icon-btn" data-action="settings" title="Réglages" aria-label="Réglages">⚙️</button></div>`;
 }
-function renderMobile(){let links=[['home','🏠','Accueil'],['map','🗺️','Mondes'],['arcade','🎮','Jeux'],['notebook','📖','Carnet'],['progress','🏅','Progrès']];mobile.innerHTML=links.map(([v,ic,label])=>`<button data-action="nav" data-view="${v}" class="${page===v?'active':''}" ${page===v?'aria-current="page"':''}><span aria-hidden="true">${ic}</span>${label}</button>`).join('')}
+function renderMobile(){let links=[['home','🏠','Accueil'],['map','🗺️','Mondes'],['adventures','✨','Aventures'],['arcade','🎮','Jeux'],['notebook','📖','Carnet'],['progress','🏅','Progrès']];mobile.innerHTML=links.map(([v,ic,label])=>`<button data-action="nav" data-view="${v}" class="${page===v?'active':''}" ${page===v?'aria-current="page"':''}><span aria-hidden="true">${ic}</span>${label}</button>`).join('')}
 function gradeChips(){return `<div class="grade-row" aria-label="Sélectionner un niveau">${DB.grades.map(g=>`<button class="grade-chip ${g===save.grade?'active':''}" data-action="grade" data-grade="${g}">${g}</button>`).join('')}</div>`}
 function landBoard(){
  const hits=[
@@ -68,26 +108,46 @@ function landBoard(){
   ['communication',79.4,59.1,20.2,11.2,'Communication']
  ];
  const spot=(kind,name,action,extra,x,y,w,h)=>`<button type="button" class="map-hotspot ${kind}" data-action="${action}" ${extra} style="--hx:${x}%;--hy:${y}%;--hw:${w}%;--hh:${h}%" aria-label="${esc(name)}" title="${esc(name)}"><span class="sr-only">${esc(name)}</span></button>`;
- return `<div class="map-scroller" role="region" tabindex="0" aria-label="Carte des îles de Grammarland, défilement horizontal sur petit écran"><div class="map-canvas">
-   <img class="map-illustration" src="${asset('land-map.webp')}" alt="Carte illustrée en 2D de Grammarland : huit îles colorées, cascades, châteaux et personnages originaux." draggable="false" width="1536" height="1024">
+ const mobileHits=[
+  ['starter',33.0,30.6,35.2,5.7,'The Basics'],
+  ['present',1.0,40.4,36.2,6.4,'Verbs & Tenses'],
+  ['modal',68.2,41.0,31.3,6.4,'Modals'],
+  ['prep',1.0,60.8,35.3,6.3,'Prepositions'],
+  ['sentences',33.5,57.9,36.2,6.0,'Sentences'],
+  ['links',68.4,55.6,31.6,6.0,'Adjectives & Adverbs'],
+  ['questions',28.0,72.4,40.0,5.9,'Questions & Negation'],
+  ['communication',68.0,72.8,32.2,6.3,'Communication'],
+  ['revision',67.2,87.0,32.8,7.6,'Revision Quest']
+ ];
+ return `<div class="map-scroller" role="region" tabindex="0" aria-label="Carte des îles de Grammarland"><div class="map-canvas">
+   <picture>
+     <source media="(max-width: 620px)" srcset="${asset('land-map-mobile.png')}">
+     <img class="map-illustration" src="${asset('land-map.webp')}" alt="Carte illustrée en 2D de Grammarland : huit îles colorées, cascades, châteaux et personnages originaux." draggable="false" width="1536" height="1024">
+   </picture>
    <div class="map-live-stats" aria-live="polite"><span>🎓 ${esc(save.grade)}</span><span>⭐ ${totals().stars}</span><span>✨ ${save.xp} XP</span></div>
-   ${hits.map(([id,x,y,w,h,label])=>spot('island-spot','Ouvrir '+label,'world',`data-id="${id}"`,x,y,w,h)).join('')}
-   ${spot('island-spot','Quête de révision et défis mélangés','arcade','data-mode="mix"',79,78.3,20.8,11.4)}
-   ${spot('nav-spot','Ouvrir la carte des mondes','nav','data-view="map"',80.0,0.5,5.0,9.0)}
-   ${spot('nav-spot','Ouvrir mon carnet de grammaire','nav','data-view="notebook"',85.1,0.5,4.9,9.0)}
-   ${spot('nav-spot','Ouvrir mes progrès et badges','nav','data-view="progress"',90.0,0.5,5.0,9.0)}
-   ${spot('nav-spot','Ouvrir les réglages','settings','',95.0,0.5,4.9,9.0)}
-   ${spot('bottom-spot','Ouvrir les mini-jeux','nav','data-view="arcade"',2.4,89.1,8.3,9.5)}
-   ${spot('bottom-spot','Ouvrir le guide grammatical','nav','data-view="notebook"',11.6,89.1,8.8,9.5)}
-   ${spot('bottom-spot','Ouvrir la salle d’entraînement','arcade','data-mode="mix"',21.7,89.1,8.2,9.5)}
-   ${spot('bottom-spot','Ouvrir mes badges','nav','data-view="progress"',31.0,89.1,8.8,9.5)}
-   ${spot('bottom-spot','Ouvrir les défis finaux','arcade','data-mode="mix"',41,89.1,9,9.5)}
+   <div class="desktop-map-only">
+     ${hits.map(([id,x,y,w,h,label])=>spot('island-spot','Ouvrir '+label,'world',`data-id="${id}"`,x,y,w,h)).join('')}
+     ${spot('island-spot','Quête de révision et défis mélangés','arcade','data-mode="mix"',79,78.3,20.8,11.4)}
+     ${spot('nav-spot','Ouvrir la carte des mondes','nav','data-view="map"',80.0,0.5,5.0,9.0)}
+     ${spot('nav-spot','Ouvrir mon carnet de grammaire','nav','data-view="notebook"',85.1,0.5,4.9,9.0)}
+     ${spot('nav-spot','Ouvrir mes progrès et badges','nav','data-view="progress"',90.0,0.5,5.0,9.0)}
+     ${spot('nav-spot','Ouvrir les réglages','settings','',95.0,0.5,4.9,9.0)}
+     ${spot('bottom-spot','Ouvrir les mini-jeux','nav','data-view="arcade"',2.4,89.1,8.3,9.5)}
+     ${spot('bottom-spot','Ouvrir le guide grammatical','nav','data-view="notebook"',11.6,89.1,8.8,9.5)}
+     ${spot('bottom-spot','Ouvrir la salle d’entraînement','arcade','data-mode="mix"',21.7,89.1,8.2,9.5)}
+     ${spot('bottom-spot','Ouvrir mes badges','nav','data-view="progress"',31.0,89.1,8.8,9.5)}
+     ${spot('bottom-spot','Ouvrir les défis finaux','arcade','data-mode="mix"',41,89.1,9,9.5)}
+   </div>
+   <div class="mobile-map-only">
+     ${mobileHits.slice(0,8).map(([id,x,y,w,h,label])=>spot('island-spot','Ouvrir '+label,'world',`data-id="${id}"`,x,y,w,h)).join('')}
+     ${spot('island-spot','Quête de révision et défis mélangés','arcade','data-mode="mix"',67.2,87.0,32.8,7.6)}
+   </div>
  </div></div>`;
 }
 function homePage(){const t=totals();const next=DB.lessons.find(l=>eligible(l)&&!earned(l.id))||DB.lessons.find(eligible);const nextAction=next?`data-action="lesson" data-id="${next.id}"`:'data-action="nav" data-view="map"';return `<div class="land-landing">
  <h1 class="sr-only">Grammarland : l’aventure grammaticale en 2D</h1>
  <div class="land-topbar"><div class="land-top-copy"><span class="land-mark">🎮 GRAMMARLAND</span><span class="land-top-description">L’aventure grammaticale · 6e → 3e</span></div><div class="land-action-cluster"><label for="mapGradeSelect">Ma classe <select id="mapGradeSelect" aria-label="Sélectionner mon niveau de classe">${DB.grades.map(g=>`<option ${save.grade===g?'selected':''}>${g}</option>`).join('')}</select></label><button class="land-cta" ${nextAction}>▶ ${t.done?'Reprendre la quête':'Commencer l’aventure'}</button></div></div>
- <div class="land-board-frame">${landBoard()}</div>
+ <div class="v5-home-entry"><strong>✨ Nouveau : les aventures interactives de la V5 !</strong><button class="land-cta" data-action="nav" data-view="adventures">🎮 Explorer les 3 aventures ➜</button></div><div class="land-board-frame">${landBoard()}</div>
  <div class="land-below"><div class="land-prompt">🗺️ <strong>Choisis une île sur la carte !</strong><span>Sur téléphone, fais glisser la carte vers la droite ou la gauche. Toutes les zones sont cliquables.</span></div><div class="land-mini-stats"><span>📚 ${DB.lessons.filter(eligible).length} missions accessibles</span><span>🕹️ 6 mini-jeux</span><span>🏅 ${t.done} mission(s) terminée(s)</span></div></div>
  <details class="land-directory"><summary>🔎 Voir toutes les îles sous forme de cartes <span>▾</span></summary><div class="land-directory-content">${worldCards()}</div></details>
  <div class="land-rules"><div>👀 <strong>J’observe</strong><span>Je compare des situations.</span></div><div>🧩 <strong>Je manipule</strong><span>Je teste plusieurs formulations.</span></div><div>💡 <strong>Je comprends</strong><span>Je construis ma règle.</span></div><div>🌟 <strong>Je progresse</strong><span>Je gagne des étoiles et je révise.</span></div></div>
@@ -154,12 +214,15 @@ function showSettings(){dialog.innerHTML=`<form method="dialog"><div class="miss
  <div class="setting-row"><label for="contrastSetting">◐ Contraste renforcé</label><input type="checkbox" id="contrastSetting" data-setting="contrast" ${save.settings.contrast?'checked':''}></div>
  <div class="setting-row"><label for="dysSetting">🅰️ Police sans effets</label><input type="checkbox" id="dysSetting" data-setting="dys" ${save.settings.dys?'checked':''}></div>
  <div class="setting-row"><label for="motionSetting">🧘 Réduire les animations</label><input type="checkbox" id="motionSetting" data-setting="motion" ${save.settings.motion?'checked':''}></div>
- <h3>💾 Mes progrès</h3><p class="tiny-note">Exporte un fichier JSON pour transférer ton parcours d’un appareil à un autre. L’import remplace les progrès locaux de cet appareil.</p><div class="button-row"><button type="button" class="btn small blue" data-action="export">⬇️ Exporter</button><button type="button" class="btn small green" data-action="import">⬆️ Importer</button><input type="file" accept="application/json,.json" id="importFile" hidden></div><p class="tiny-note">Version 3.0 · Graphismes 2D originaux · GitHub Pages et usage local.</p></form>`;if(!dialog.open)dialog.showModal()}
+ <h3>💾 Mes progrès</h3><p class="tiny-note">Exporte un fichier JSON pour transférer ton parcours d’un appareil à un autre. L’import remplace les progrès locaux de cet appareil.</p><div class="button-row"><button type="button" class="btn small blue" data-action="export">⬇️ Exporter</button><button type="button" class="btn small green" data-action="import">⬆️ Importer</button><input type="file" accept="application/json,.json" id="importFile" hidden></div><p class="tiny-note">Version 5.0 · Aventures interactives et 77 missions, graphismes 2D originaux · GitHub Pages et usage local.</p></form>`;if(!dialog.open)dialog.showModal()}
 function exportProgress(){const content=JSON.stringify({app:'GRAMMARLAND',version:1,data:save,exportedAt:new Date().toISOString()},null,2);const a=document.createElement('a');const blob=new Blob([content],{type:'application/json'});const url=URL.createObjectURL(blob);a.href=url;a.download='grammarland-mes-progres.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Progression exportée avec succès !')}
 async function importProgress(file){if(!file)return;try{if(file.size>2000000)throw new Error('Fichier trop volumineux');const doc=JSON.parse(await file.text());if(!['GRAMMARLAND','GRAMMAROO'].includes(doc.app)||!doc.data||typeof doc.data!=='object'||!doc.data.progress||!DB.grades.includes(doc.data.grade))throw new Error('Fichier GRAMMARLAND non reconnu');if(!confirm('Remplacer tes progrès actuels par ceux du fichier importé ?'))return;const b=defaults();save={...b,...doc.data,settings:{...b.settings,...doc.data.settings}};persist();dialog.close();nav('home');toast('Progrès restaurés !')}catch(e){toast('Import impossible : '+e.message)}}
 function quitGame(){if(!game)return nav('map');const l=game.lessonId?lessonBy(game.lessonId):null;nav(l?'world':'arcade',l?l.world:null)}
 function handleClick(ev){const b=ev.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;
  if(a==='nav'){ev.preventDefault();nav(b.dataset.view);return}
+ if(a==='v5-open'){openAdventure(b.dataset.id);return}
+ if(a==='v5-hub'){adventure=null;nav('adventures');return}
+ if(a.startsWith('v5-')){v5Action(a.slice(3),Number(b.dataset.index));return}
  if(a==='world'){openWorld(b.dataset.id);return}
  if(a==='grade'){changeGrade(b.dataset.grade);return}
  if(a==='settings'){showSettings();return}
@@ -184,7 +247,7 @@ function handleClick(ev){const b=ev.target.closest('[data-action]');if(!b)return
 function handleChange(ev){const el=ev.target;if(el.id==='gradeSelect'||el.id==='mapGradeSelect'){changeGrade(el.value)}else if(el.id==='arcadeWorld'){arcadeWorld=el.value;render()}else if(el.id==='notebookWorld'){notebookFilter=el.value;render()}else if(el.id==='importFile'){importProgress(el.files?.[0])}else if(el.dataset.setting){const k=el.dataset.setting;save.settings[k]=el.type==='checkbox'?el.checked:el.value;persist();applySettings();}}
 document.addEventListener('click',handleClick);document.addEventListener('change',handleChange);
 // A bookmark can reopen a destination. Active games always start from the map.
-const hash=decodeURI(location.hash.slice(1));if(hash==='mondes')page='map';else if(hash==='jeux')page='arcade';else if(hash==='carnet')page='notebook';else if(hash==='progres')page='progress';else if(hash.startsWith('monde/')){worldId=hash.split('/')[1];page=worldBy(worldId)?'world':'map'}
+const hash=decodeURI(location.hash.slice(1));if(hash==='aventures')page='adventures';else if(hash.startsWith('aventure/'))page='adventures';else if(hash==='mondes')page='map';else if(hash==='jeux')page='arcade';else if(hash==='carnet')page='notebook';else if(hash==='progres')page='progress';else if(hash.startsWith('monde/')){worldId=hash.split('/')[1];page=worldBy(worldId)?'world':'map'}
 applySettings();render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 })();

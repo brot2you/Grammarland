@@ -1,22 +1,12 @@
-# GRAMMARLAND V3 — L’archipel 2D
+# GRAMMARLAND V5 — The Great Adventure
 
-Application statique pour découvrir la grammaire anglaise, 6e–3e, avec une carte interactive en illustrations 2D originales (WebP/PNG, sans SVG).
+Application 2D indépendante, 77 missions de grammaire (6e–3e) héritées de V4 et **3 aventures interactives inédites de quatre scènes chacune** : Fabrique du Temps, Château des Phrases et Jardin des Possibles.
 
-## Installation sur GitHub Pages
+## Publication GitHub Pages
+Décompresser puis placer **tous les fichiers, y compris assets/**, à la racine du dépôt. Pages : `main / (root)`. Il n’est pas nécessaire d’installer la V4 au préalable.
 
-1. Décompresser toute l’archive.
-2. Déposer `index.html`, `styles.css`, `app.js`, `data.js`, `manifest.webmanifest`, `sw.js` et le dossier `assets/` à la racine du dépôt.
-3. Dans Settings > Pages, publier la branche `main` / dossier `/ (root)`.
-4. Actualiser avec Ctrl+F5 si une ancienne version était en cache.
+## Utilisation
+Depuis la carte d'accueil, choisir « Explorer les 3 aventures », ou l'onglet « Aventures ». Les scènes ne sont pas chronométrées, et offrent des indices et des explications. Récompense : 40 XP par aventure terminée pour la première fois. Les 77 missions et les sauvegardes précédentes restent disponibles.
 
-Ouvrir `index.html` suffit également pour jouer localement. La sauvegarde est locale et peut être exportée/importée dans les réglages.
-
-## Fonctionnalités
-
-- Carte interactive à 8 îles grammaticales + 9e île de révision.
-- Parcours différenciés 6e, 5e, 4e, 3e et progression mémorisée (identifiants anciens conservés).
-- Missions de découverte avec observation, construction, classement, situations d’usage, réparation et lecture vocale selon le navigateur.
-- Mini-jeux, carnet, badges, révisions espacées, aides à la demande et mode contraste/texte agrandi.
-- Pas de comptes ni de serveur. Pas d’assets SVG ; les décors proviennent de l’illustration 2D validée et de ses découpes.
-
-La carte sur mobile se parcourt horizontalement par glissement, pour garder les illustrations lisibles. Le menu inférieur reste accessible.
+## Limites
+Les nouvelles aventures sont des mini-scènes réactives avec des choix et briques de mots, **pas** encore un moteur de plateforme à déplacement libre. Les décors réutilisent les illustrations 2D existantes. Une couverture exhaustive des compétences orales / du CECRL nécessitera d'autres modules.
