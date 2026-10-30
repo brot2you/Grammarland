@@ -1,6 +1,6 @@
 /* GRAMMARLAND V6 — hors ligne (HTTPS ou localhost). */
-var CACHE = 'grammarland-v6-2026-10-30';
-var ASSETS = ['./', './index.html', './manifest.webmanifest', './assets/icon192.png', './assets/icon512.png'];
+var CACHE = 'grammarland-v6-2026-10-30b';
+var ASSETS = ['./', './index.html', './manifest.webmanifest', './assets/icon192.png', './assets/icon512.png', './assets/landmap.webp', './assets/landmap-mobile.webp'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS); }).then(function () { return self.skipWaiting(); }));
 });

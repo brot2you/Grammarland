@@ -14,7 +14,7 @@ L’archipel de la grammaire anglaise, de la 6e à la 3e. Application autonome (
 
 ## Publication GitHub Pages
 Décompresser et placer **tous les fichiers** (dont `assets/` et `.nojekyll`) à la racine du dépôt. Réglages > Pages : `main / (root)`.
-`index.html` est autonome : contenu, images de l’archipel et logo y sont intégrés.
+`index.html` contient le contenu, le logo et les illustrations des îles ; les deux grandes cartes illustrées (ordinateur et mobile) sont dans `assets/`.
 
 ## Sauvegarde
 Les progrès sont dans le navigateur (clé `grammarland-v6`). La V6 démarre une nouvelle sauvegarde : les identifiants de missions ont changé depuis la V5. Export / import JSON depuis « Progrès ».
