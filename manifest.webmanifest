@@ -1,15 +1,15 @@
 {
-  "name":"GRAMMARLAND — Les îles des mots",
-  "short_name":"GRAMMARLAND",
-  "description":"Explore la grammaire anglaise en jouant, de la 6e à la 3e.",
-  "start_url":"./index.html",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#c1ecfb",
-  "theme_color":"#6965dd",
-  "lang":"fr",
-  "icons":[
-    {"src":"assets/icon192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/icon512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  "name": "GRAMMARLAND — l’archipel de la grammaire anglaise · by BROT2YOU APP",
+  "short_name": "GRAMMARLAND",
+  "description": "Grammaire anglaise de la 6e à la 3e, adossée au programme d’anglais du collège. Une appli BROT2YOU APP.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e4f5ff",
+  "theme_color": "#1b2a6b",
+  "lang": "fr",
+  "icons": [
+    { "src": "assets/icon192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }

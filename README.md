@@ -1,12 +1,24 @@
-# GRAMMARLAND V5 — The Great Adventure
+# GRAMMARLAND V6 · by BROT2YOU APP
 
-Application 2D indépendante, 77 missions de grammaire (6e–3e) héritées de V4 et **3 aventures interactives inédites de quatre scènes chacune** : Fabrique du Temps, Château des Phrases et Jardin des Possibles.
+L’archipel de la grammaire anglaise, de la 6e à la 3e. Application autonome (HTML/JS, ES5), sans compte, sans publicité, hors ligne après la première visite.
+
+## Contenu
+- **93 missions** (6e : 30 · 5e : 23 · 4e : 21 · 3e : 19), réparties sur 8 îles.
+- **1 953 items** : par mission, 2 observations, 3 phrases à construire, 8 cartes à classer, 5 phrases à compléter, 3 phrases à réparer. Chaque partie tire de nouvelles questions.
+- Une mission = 6 manches : observer, construire, classer, utiliser, écouter (synthèse vocale), réparer. Une erreur déclenche une seconde chance (2 maximum).
+- Distracteurs construits sur les erreurs typiques des francophones (*He have, *I am agree, *since three years…).
+- **8 gardiens** (un boss par île et par classe) : 10 défis mélangés, 2 erreurs maximum.
+- **Révisions espacées** : 1, 2, 4, 8, 16 puis 32 jours ; une erreur ramène la mission au lendemain.
+- 6 mini-jeux, 3 aventures, carnet de grammaire avec recherche, badges et rangs (récompenses internes à l’appli).
+- Page **Programme** : repères grammaticaux du BO n°22 du 29 mai 2025 (annexe 3) mis en regard des missions, avec un statut d’ancrage par mission (L = listé au programme, E = exemple du programme, S = progression spiralaire proposée).
 
 ## Publication GitHub Pages
-Décompresser puis placer **tous les fichiers, y compris assets/**, à la racine du dépôt. Pages : `main / (root)`. Il n’est pas nécessaire d’installer la V4 au préalable.
+Décompresser et placer **tous les fichiers** (dont `assets/` et `.nojekyll`) à la racine du dépôt. Réglages > Pages : `main / (root)`.
+`index.html` est autonome : contenu, images de l’archipel et logo y sont intégrés.
 
-## Utilisation
-Depuis la carte d'accueil, choisir « Explorer les 3 aventures », ou l'onglet « Aventures ». Les scènes ne sont pas chronométrées, et offrent des indices et des explications. Récompense : 40 XP par aventure terminée pour la première fois. Les 77 missions et les sauvegardes précédentes restent disponibles.
+## Sauvegarde
+Les progrès sont dans le navigateur (clé `grammarland-v6`). La V6 démarre une nouvelle sauvegarde : les identifiants de missions ont changé depuis la V5. Export / import JSON depuis « Progrès ».
 
-## Limites
-Les nouvelles aventures sont des mini-scènes réactives avec des choix et briques de mots, **pas** encore un moteur de plateforme à déplacement libre. Les décors réutilisent les illustrations 2D existantes. Une couverture exhaustive des compétences orales / du CECRL nécessitera d'autres modules.
+## Limites connues
+- Les repères de 4e et 3e affichés dans la page Programme sont ceux confirmés dans l’annexe 3 ; les autres missions de ces niveaux sont marquées S. À confronter à la progression de l’équipe.
+- La voix anglaise dépend des voix installées sur l’appareil.
