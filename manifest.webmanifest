@@ -1,0 +1,15 @@
+{
+  "name":"GRAMMARLAND — Les îles des mots",
+  "short_name":"GRAMMARLAND",
+  "description":"Explore la grammaire anglaise en jouant, de la 6e à la 3e.",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#c1ecfb",
+  "theme_color":"#6965dd",
+  "lang":"fr",
+  "icons":[
+    {"src":"assets/icon192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/icon512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}

@@ -1,0 +1,6 @@
+/* Optional offline support on HTTPS / localhost. App has no external dependencies. */
+const CACHE='grammarland-v3-2026-10-30';
+const ASSETS=['./','./index.html','./styles.css','./app.js','./data.js','./manifest.webmanifest','./assets/pip.png','./assets/icon192.png','./assets/icon512.png',...'land-map starter present modal links prep sentences questions communication'.split(' ').map(x=>'./assets/'+x+'.webp')];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(x=>(x.startsWith('grammaroo-')||x.startsWith('grammarland-'))&&x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;event.respondWith(fetch(event.request).then(res=>{if(res.ok){let cp=res.clone();caches.open(CACHE).then(cache=>cache.put(event.request,cp))}return res}).catch(()=>caches.match(event.request).then(cached=>cached||caches.match('./index.html'))))});

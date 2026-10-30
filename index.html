@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#128ed9">
+ <meta name="description" content="GRAMMARLAND — Une aventure interactive et progressive pour découvrir la grammaire anglaise, de la 6e à la 3e.">
+ <title>GRAMMARLAND · Les îles des mots</title>
+ <link rel="icon" href="assets/pip.png" type="image/png">
+ <link rel="manifest" href="manifest.webmanifest">
+ <link rel="stylesheet" href="styles.css">
+ <script defer src="data.js"></script>
+ <script defer src="app.js"></script>
+</head>
+<body>
+ <a class="skip-link" href="#main">Aller au contenu</a>
+ <div class="cloud-back cloud-one" aria-hidden="true"></div><div class="cloud-back cloud-two" aria-hidden="true"></div>
+ <div id="app">
+  <header class="site-header" id="siteHeader"></header>
+  <main id="main" tabindex="-1"></main>
+  <nav id="mobileNav" class="mobile-nav" aria-label="Navigation principale"></nav>
+  <footer class="site-footer">GRAMMARLAND ✦ Un univers original, fait pour découvrir, essayer et recommencer. · Aucune connexion requise.</footer>
+ </div>
+ <div id="toast" class="toast" role="status" aria-live="polite"></div>
+ <dialog id="settingsDialog" class="settings-dialog"></dialog>
+ <div id="celebration" class="celebration" aria-hidden="true"></div>
+</body>
+</html>
