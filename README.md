@@ -9,6 +9,7 @@ L’archipel de la grammaire anglaise, de la 6e à la 3e. Application autonome (
 - Distracteurs construits sur les erreurs typiques des francophones (*He have, *I am agree, *since three years…).
 - **8 gardiens** (un boss par île et par classe) : 10 défis mélangés, 2 erreurs maximum.
 - **Révisions espacées** : 1, 2, 4, 8, 16 puis 32 jours ; une erreur ramène la mission au lendemain.
+- Effets sonores 8-bit synthétisés (Web Audio, aucun fichier son), coupables d’un clic (🔊 en haut) avec réglage du volume.
 - 6 mini-jeux, 3 aventures, carnet de grammaire avec recherche, badges et rangs (récompenses internes à l’appli).
 - Page **Programme** : repères grammaticaux du BO n°22 du 29 mai 2025 (annexe 3) mis en regard des missions, avec un statut d’ancrage par mission (L = listé au programme, E = exemple du programme, S = progression spiralaire proposée).
 

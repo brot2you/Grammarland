@@ -515,7 +515,7 @@ function defaults() {
   return {
     v: 6, grade: '6e', xp: 0, prog: {}, boss: {}, adv: {}, wins: 0, reviews: 0, perfect: 0, sessions: 0,
     streak: { last: '', count: 0 }, welcome: false,
-    settings: { audio: true, voice: 'en-GB', slow: false, dys: false, large: false, contrast: false, calm: false, guided: false }
+    settings: { sfx: true, vol: 0.5, audio: true, voice: 'en-GB', slow: false, dys: false, large: false, contrast: false, calm: false, guided: false }
   };
 }
 function load() {
@@ -616,6 +616,62 @@ function speak(text, slow) {
   } catch (e) { toast('Impossible de lancer la lecture audio ici.'); }
 }
 if (TTS) { try { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = function () {}; } catch (e) {} }
+
+/* ============ Effets sonores 8-bit (synthétisés, originaux) ============ */
+var AC = null, SFX_MASTER = null;
+function actx() {
+  if (AC) { if (AC.state === 'suspended' && AC.resume) AC.resume(); return AC; }
+  var C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  try { AC = new C(); SFX_MASTER = AC.createGain(); SFX_MASTER.connect(AC.destination); } catch (e) { AC = null; }
+  return AC;
+}
+function noteHz(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+/* seq : [note MIDI ou 0 = silence, durée en s, (forme d'onde), (glissé vers note)] */
+function play(seq, wave, gainMul) {
+  if (!S.settings.sfx) return;
+  var c = actx(); if (!c) return;
+  SFX_MASTER.gain.value = (S.settings.vol == null ? 0.5 : +S.settings.vol) * 0.22 * (gainMul || 1);
+  var t = c.currentTime + 0.01, i;
+  for (i = 0; i < seq.length; i++) {
+    var n = seq[i][0], d = seq[i][1];
+    if (n) {
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = seq[i][2] || wave || 'square';
+      o.frequency.setValueAtTime(noteHz(n), t);
+      if (seq[i][3]) o.frequency.exponentialRampToValueAtTime(noteHz(seq[i][3]), t + d);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(1, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d * 0.95);
+      o.connect(g); g.connect(SFX_MASTER);
+      o.start(t); o.stop(t + d + 0.02);
+    }
+    t += d;
+  }
+}
+var SND = {
+  tap:     function () { play([[84, 0.035]], 'square', 0.6); },
+  pick:    function () { play([[76, 0.04], [81, 0.05]], 'square', 0.7); },
+  place:   function () { play([[72, 0.03], [79, 0.05]], 'triangle', 1.3); },
+  unplace: function () { play([[79, 0.03], [72, 0.05]], 'triangle', 1.3); },
+  ok:      function () { play([[83, 0.07], [88, 0.07], [91, 0.07], [95, 0.18]]); },
+  ko:      function () { play([[62, 0.12, 'square', 55], [0, 0.04], [55, 0.22, 'square', 48]], 'square', 0.9); },
+  coin:    function () { play([[93, 0.06], [100, 0.26]], 'square', 0.8); },
+  warp:    function () { play([[48, 0.32, 'square', 84]], 'square', 0.6); },
+  start:   function () { play([[67, 0.08], [72, 0.08], [76, 0.08], [79, 0.08], [84, 0.22]]); },
+  hint:    function () { play([[88, 0.06, 'triangle'], [91, 0.06, 'triangle'], [96, 0.14, 'triangle']], 'triangle', 1.4); },
+  star:    function () { play([[96, 0.05], [100, 0.05], [103, 0.12]], 'square', 0.7); },
+  win:     function () { play([[72, 0.1], [76, 0.1], [79, 0.1], [84, 0.2], [0, 0.06], [79, 0.1], [84, 0.42]]); },
+  fanfare: function () {
+    play([[67, 0.12], [72, 0.12], [76, 0.12], [79, 0.12], [76, 0.12], [79, 0.12], [84, 0.5]]);
+    play([[48, 0.24, 'triangle'], [52, 0.24, 'triangle'], [55, 0.24, 'triangle'], [60, 0.6, 'triangle']], 'triangle', 1.6);
+  },
+  lose:    function () { play([[67, 0.16], [66, 0.16], [65, 0.16], [64, 0.5, 'square', 52]], 'square', 0.8); },
+  badge:   function () { play([[84, 0.08], [88, 0.08], [91, 0.08], [96, 0.08], [100, 0.3]], 'square', 0.8); }
+};
+function sfx(name) { try { if (SND[name]) SND[name](); } catch (e) {} }
+document.addEventListener('pointerdown', function () { if (S.settings.sfx) actx(); }, { once: true });
+
 function sayBtn(text, label) {
   return '<button class="say" data-act="say" data-text="' + esc(text) + '" aria-label="' + esc(label || 'Écouter la phrase') + '" title="Écouter">🔊</button>';
 }
@@ -696,6 +752,7 @@ function renderChrome() {
       }).join('') + '</div>' +
       '<div class="top-stats"><span class="pill xp" title="' + esc(r.name) + '">' + r.icon + ' ' + S.xp + ' XP</span>' +
       '<span class="pill star">⭐ ' + t.stars + '</span></div>' +
+      '<button class="iconbtn" data-act="sfx-toggle" aria-pressed="' + !!S.settings.sfx + '" aria-label="' + (S.settings.sfx ? 'Couper les effets sonores' : 'Activer les effets sonores') + '" title="Effets sonores">' + (S.settings.sfx ? '🔊' : '🔇') + '</button>' +
       '<button class="iconbtn" data-act="settings" aria-label="Réglages">⚙️</button>' +
       '<a class="byline" href="https://brot2you.github.io/BROT2YOU-the-blog/" target="_blank" rel="noopener" aria-label="Une appli BROT2YOU APP"><span>by</span><img src="' + D.img.logo + '" alt="BROT2YOU APP" width="78" height="57"></a>' +
     '</div>';
@@ -853,6 +910,7 @@ function mkRound(kind, m) {
   return { kind: kind, mid: m.id, idx: idx };
 }
 function newGame(type, plan, meta) {
+  sfx('start');
   G = { type: type, plan: plan, rounds: [], i: 0, errors: 0, correct: 0, xp: 0, retries: 0, used: {}, meta: meta || {}, hints: 0, results: [] };
   plan.forEach(function (p) { G.rounds.push(mkRound(p[0], M[p[1]])); });
   prepRound();
@@ -939,8 +997,9 @@ function check() {
     ok = r.cards.every(function (c, i) { return r.assign[i] === c.g; });
   }
   r.solved = true; r.ok = ok;
-  if (ok) { G.correct++; G.xp += 10; S.wins++; }
+  if (ok) { G.correct++; G.xp += 10; S.wins++; sfx('ok'); setTimeout(function () { sfx('coin'); }, 380); }
   else {
+    sfx('ko');
     G.errors++;
     if (G.type === 'lesson' && G.retries < 2) {
       G.retries++;
@@ -969,7 +1028,9 @@ function nextRound() {
   else finish();
 }
 function focusRound() { var h = document.querySelector('.round h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus(); } }
+var badgeCountBefore = null;
 function finish() {
+  badgeCountBefore = badges().filter(function (b) { return b[2]; }).length;
   var g = G, res = { type: g.type, correct: g.correct, total: g.results.length, errors: g.errors, xp: g.xp, meta: g.meta, bonus: 0 };
   if (g.type === 'lesson') {
     var id = g.meta.mid, old = S.prog[id], first = !(old && old.done);
@@ -989,6 +1050,14 @@ function finish() {
   LAST = res; G = null;
   go('fin');
   if ((res.type === 'lesson' && res.stars === 3) || res.won) burst();
+  if (res.type === 'lesson') {
+    sfx(res.stars === 3 ? 'fanfare' : 'win');
+    var k; for (k = 0; k < res.stars; k++) (function (d) { setTimeout(function () { sfx('star'); }, 900 + d * 260); })(k);
+  } else if (res.type === 'boss') sfx(res.won ? 'fanfare' : 'lose');
+  else sfx('win');
+  if (badgeCountBefore !== null && badges().filter(function (b) { return b[2]; }).length > badgeCountBefore) {
+    setTimeout(function () { sfx('badge'); toast('🏅 Nouveau badge débloqué ! Va voir tes progrès.'); }, 1900);
+  }
 }
 
 /* ============ Rendu d'une manche ============ */
@@ -1302,21 +1371,21 @@ function pageAdventure() {
 function advAction(act, el) {
   var a = advFind(ADV.id), sc = a.scenes[ADV.i], build = a.kind === 'build';
   if (act === 'adv-hint') { ADV.fb = build ? 'Commence par le sujet, puis le verbe, puis les compléments.' : sc[4]; ADV.ok = false; }
-  if (act === 'adv-pick' && !ADV.solved) { ADV.sel = [+el.getAttribute('data-k')]; ADV.fb = ''; }
-  if (act === 'adv-place' && !ADV.solved) { ADV.sel.push(+el.getAttribute('data-k')); ADV.fb = ''; }
+  if (act === 'adv-pick' && !ADV.solved) { sfx('pick'); ADV.sel = [+el.getAttribute('data-k')]; ADV.fb = ''; }
+  if (act === 'adv-place' && !ADV.solved) { sfx('place'); ADV.sel.push(+el.getAttribute('data-k')); ADV.fb = ''; }
   if (act === 'adv-unplace' && !ADV.solved) { ADV.sel.splice(+el.getAttribute('data-pos'), 1); }
   if (act === 'adv-clear') { ADV.sel = []; }
   if (act === 'adv-check') {
     if (!ADV.sel.length) { toast('Fais un choix avant de tester.'); return; }
     var ok = build ? (ADV.sel.map(function (k) { return sc[3][k]; }).join(' ') === sc[2].join(' ')) : ADV.sel[0] === sc[3];
-    if (ok) { ADV.solved = true; ADV.ok = true; ADV.fb = sc[4]; }
-    else { ADV.err++; ADV.ok = false; ADV.fb = 'Pas encore : relis la situation et essaie une autre formulation. Tu peux demander un indice.'; }
+    if (ok) { ADV.solved = true; ADV.ok = true; ADV.fb = sc[4]; sfx('ok'); setTimeout(function () { sfx('coin'); }, 380); }
+    else { sfx('ko'); ADV.err++; ADV.ok = false; ADV.fb = 'Pas encore : relis la situation et essaie une autre formulation. Tu peux demander un indice.'; }
   }
   if (act === 'adv-next') {
     if (ADV.i === 3) {
       var first = !S.adv[a.id]; S.adv[a.id] = true;
       if (first) S.xp += 40;
-      persist(); burst(); toast(first ? '🏆 Aventure terminée : +40 XP !' : '🏆 Aventure terminée !');
+      persist(); burst(); sfx('fanfare'); toast(first ? '🏆 Aventure terminée : +40 XP !' : '🏆 Aventure terminée !');
       ADV = null; go('aventures'); return;
     }
     ADV.i++; ADV.sel = []; ADV.solved = false; ADV.fb = ''; ADV.ok = false;
@@ -1332,6 +1401,9 @@ function showSettings() {
   }
   openModal('<div class="row between"><h2 class="h2">Réglages</h2><button class="iconbtn" data-act="modal-close" aria-label="Fermer">✕</button></div>' +
     '<p class="kicker">Ma classe</p><div class="grades">' + GRADES.map(function (g) { return '<button class="gchip' + (g === S.grade ? ' on' : '') + '" data-act="grade" data-g="' + g + '">' + g + '</button>'; }).join('') + '</div>' +
+    '<p class="kicker">Effets sonores</p>' + tg('sfx', 'Sons 8-bit', 'Bruitages rétro façon console : bonne réponse, pièce, fanfare de fin…') +
+    '<label class="field">Volume <input type="range" min="0.1" max="1" step="0.1" data-set="vol" value="' + (st.vol == null ? 0.5 : st.vol) + '"></label>' +
+    '<button class="btn small ghost" data-act="sfx-test">🎵 Tester les sons</button>' +
     '<p class="kicker">Voix anglaise</p>' + tg('audio', 'Lecture audio', 'Les phrases peuvent être lues à voix haute.') +
     '<label class="field">Accent <select data-set="voice">' + [['en-GB', 'Britannique'], ['en-US', 'Américain'], ['en-IE', 'Irlandais'], ['en-AU', 'Australien']].map(function (v) {
       return '<option value="' + v[0] + '"' + (st.voice === v[0] ? ' selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select></label>' +
@@ -1370,8 +1442,8 @@ document.addEventListener('click', function (e) {
   var act = el.getAttribute('data-act'), r = cur();
   if (act.indexOf('adv-') === 0) { advAction(act, el); return; }
   switch (act) {
-    case 'nav': if (G && page === 'jouer') { G = null; } go(el.getAttribute('data-p')); break;
-    case 'world': go('monde', el.getAttribute('data-id')); break;
+    case 'nav': sfx('tap'); if (G && page === 'jouer') { G = null; } go(el.getAttribute('data-p')); break;
+    case 'world': sfx('warp'); go('monde', el.getAttribute('data-id')); break;
     case 'mission': go('mission', el.getAttribute('data-id')); break;
     case 'start': startLesson(el.getAttribute('data-id')); break;
     case 'boss': startBoss(el.getAttribute('data-id')); break;
@@ -1383,20 +1455,22 @@ document.addEventListener('click', function (e) {
       S.grade = el.getAttribute('data-g'); persist();
       if (!$('modal').hidden) showSettings();
       render(); toast('Classe : ' + S.grade); break;
-    case 'settings': showSettings(); break;
+    case 'settings': sfx('tap'); showSettings(); break;
+    case 'sfx-toggle': S.settings.sfx = !S.settings.sfx; persist(); renderChrome(); if (S.settings.sfx) sfx('coin'); toast(S.settings.sfx ? '🔊 Effets sonores activés' : '🔇 Effets sonores coupés'); break;
+    case 'sfx-test': sfx('fanfare'); break;
     case 'modal-close': closeModal(); break;
     case 'confirm-ok': closeModal(); if (confirmCb) confirmCb(); confirmCb = null; break;
     case 'welcome-ok': S.welcome = true; persist(); renderMain(); break;
     case 'say': speak(el.getAttribute('data-text')); break;
-    case 'pick': if (r && !r.solved) { r.sel = +el.getAttribute('data-i'); renderMain(); } break;
-    case 'place': if (r && !r.solved) { r.placed.push(+el.getAttribute('data-k')); renderMain(); } break;
-    case 'unplace': if (r && !r.solved) { r.placed.splice(+el.getAttribute('data-pos'), 1); renderMain(); } break;
+    case 'pick': if (r && !r.solved) { sfx('pick'); r.sel = +el.getAttribute('data-i'); renderMain(); } break;
+    case 'place': if (r && !r.solved) { sfx('place'); r.placed.push(+el.getAttribute('data-k')); renderMain(); } break;
+    case 'unplace': if (r && !r.solved) { sfx('unplace'); r.placed.splice(+el.getAttribute('data-pos'), 1); renderMain(); } break;
     case 'clear': if (r && !r.solved) { r.placed = []; renderMain(); } break;
-    case 'sort': if (r && !r.solved) { r.assign[+el.getAttribute('data-i')] = +el.getAttribute('data-g'); renderMain(); } break;
-    case 'unsort': if (r && !r.solved) { delete r.assign[+el.getAttribute('data-i')]; renderMain(); } break;
+    case 'sort': if (r && !r.solved) { sfx('place'); r.assign[+el.getAttribute('data-i')] = +el.getAttribute('data-g'); renderMain(); } break;
+    case 'unsort': if (r && !r.solved) { sfx('unplace'); delete r.assign[+el.getAttribute('data-i')]; renderMain(); } break;
     case 'listen': speak(answerText(r)); break;
     case 'listen-slow': speak(answerText(r), true); break;
-    case 'hint': if (r) { r.hint = true; G.hints++; renderMain(); } break;
+    case 'hint': if (r) { sfx('hint'); r.hint = true; G.hints++; renderMain(); } break;
     case 'check': check(); break;
     case 'next': nextRound(); break;
     case 'quit':
@@ -1424,7 +1498,9 @@ document.addEventListener('change', function (e) {
     var k = t.getAttribute('data-set');
     S.settings[k] = (t.type === 'checkbox') ? t.checked : t.value;
     persist(); applySettings();
+    if (k === 'guided' || k === 'sfx') renderChrome();
     if (k === 'guided') render();
+    if (k === 'vol') sfx('coin');
   }
   if (t && t.id === 'importer' && t.files && t.files[0]) importSave(t.files[0]);
 });
